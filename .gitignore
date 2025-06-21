@@ -1,0 +1,7 @@
+venv
+*__pycache__
+
+data/all-dogs.zip
+data/test
+data/train
+data/all-dogs
