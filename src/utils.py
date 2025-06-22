@@ -15,7 +15,7 @@ import pandas as pd
 
 from torchvision import transforms
 import torch
-from custom_vae import VAEDog
+from src.custom_vae import VAEDog
 
 pipeline = StableDiffusionPipeline.from_pretrained("ckpt/anything-v3.0").to("cuda")
 
@@ -105,21 +105,31 @@ def compute_cka(X, Y):
 
     return numerator / denominator
 
-def extract_latents_batch(vae, images, batch_size=8, release_gpu:bool=False):
+def extract_latents_batch(vae, images, batch_size=8):
     all_latents = []
-    transform = transforms.ToTensor()
+    transform = transforms.Compose([
+        transforms.Resize((512, 512)),
+        transforms.ToTensor()
+    ])
     for i in range(0, len(images), batch_size):
         batch_imgs = images[i:i+batch_size]
         images_tensor = torch.stack([transform(img).to("cuda") for img in batch_imgs]) * 2 - 1
         with torch.no_grad():
-            if isinstance(vae, VAEDog):  # Custom VAE case
-                z = vae.encode(images_tensor)
-            else:  # diffusers VAE case
-                z = vae.encode(images_tensor).latent_dist.sample()
+            encoded = vae.encode(images_tensor)
+            
+            if hasattr(encoded, 'sample'):
+                z = encoded.sample()
+            elif hasattr(encoded, 'latent_dist'):
+                z = encoded.latent_dist.sample()
+            elif hasattr(encoded, 'latent'):
+                z = encoded.latent
+            else:
+                raise ValueError("Nieznany typ wyniku encode()")
+            
         all_latents.append(z.flatten(1))
     return torch.cat(all_latents, dim=0)
 
-def compare_all_vaes_pandas(vaes: dict, imgs, batch_size=4):
+def compare_all_vaes_pandas(vaes: dict, imgs, batch_size=8):
     latent_cache = {}
     names = list(vaes.keys())
 

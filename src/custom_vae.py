@@ -345,7 +345,7 @@ class VAEDog(AutoencoderKL):
         return {"sample": decoded}
 
 def download_custom_vae(device="cuda"):
-    file_id  = '1doeGy4mQvf2AIdBPUt39ofraRywbU3e7'
+    file_id  = '1ZVAku5pNJM7QN6Y2Bng2rW9DUbzMu-7T'
     url = f"https://drive.google.com/uc?id={file_id}"
     output = "vae_checkpoint.pth"
     gdown.download(url, output, quiet=False)
@@ -368,5 +368,4 @@ def load_custom_vae(device="cuda"):
     vae.load_state_dict(new_weights)
     vae.to(device)
 
-    vae = VAEDog(vae)
     return vae
